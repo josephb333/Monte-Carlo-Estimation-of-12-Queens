@@ -60,7 +60,7 @@ def get_valid_positions(board, row, n):
     return valid
 
 
-def monte_carlo_estimate(n, num_trials=1000):
+def monte_carlo_estimate(n, num_trials=1000, seed=None):
     """
     Estimate the number of nodes visited by backtracking using Monte Carlo method.
     
@@ -72,10 +72,14 @@ def monte_carlo_estimate(n, num_trials=1000):
     Args:
         n: Board size (number of queens)
         num_trials: Number of Monte Carlo trials to run
+        seed: Optional random seed for reproducibility
         
     Returns:
         Tuple of (average_estimate, individual_estimates, avg_time_per_trial)
     """
+    if seed is not None:
+        random.seed(seed)
+    
     estimates = []
     start_time = time.time()
     
@@ -89,7 +93,9 @@ def monte_carlo_estimate(n, num_trials=1000):
             m = len(valid_positions)
             
             if m == 0:
-                # Dead end reached
+                # Dead end reached - this trial hit a dead end before completing
+                # The partial estimate is still valid as it represents this path's
+                # contribution to the tree size estimate
                 break
             
             product *= m
@@ -159,6 +165,9 @@ def main():
     num_trials = 1000  # Number of Monte Carlo trials
     num_runs = 5  # Number of times to run the entire estimation
     
+    # Set random seed for reproducibility (comment out for different results each run)
+    random.seed(42)
+    
     print("=" * 70)
     print("Monte Carlo Estimation for 12-Queens Problem")
     print("=" * 70)
@@ -205,7 +214,8 @@ def main():
     print("Summary Statistics")
     print("-" * 70)
     overall_avg = sum(all_estimates) / len(all_estimates)
-    variance = sum((x - overall_avg) ** 2 for x in all_estimates) / len(all_estimates)
+    # Use sample variance (n-1) for statistical accuracy
+    variance = sum((x - overall_avg) ** 2 for x in all_estimates) / (len(all_estimates) - 1)
     std_dev = variance ** 0.5
     
     print(f"\nActual nodes (backtracking): {actual_nodes:,}")
@@ -265,7 +275,8 @@ sampling paths and extrapolating. For the {n}-Queens problem:
     
     total_estimates = all_estimates + additional_estimates
     final_avg = sum(total_estimates) / len(total_estimates)
-    final_var = sum((x - final_avg) ** 2 for x in total_estimates) / len(total_estimates)
+    # Use sample variance (n-1) for statistical accuracy
+    final_var = sum((x - final_avg) ** 2 for x in total_estimates) / (len(total_estimates) - 1)
     final_std = final_var ** 0.5
     
     print(f"\nFinal average (all {len(total_estimates)} runs): {final_avg:,.0f}")
